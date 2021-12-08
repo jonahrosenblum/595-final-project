@@ -8,6 +8,8 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
+from sklearn import svm
+from sklearn.metrics import accuracy_score
 # nltk.download()pip 
 
 # path = 'drive/My Drive/EECS_595/'
@@ -25,8 +27,8 @@ lemmatizer = WordNetLemmatizer()
 porterstemmer = PorterStemmer()
 tagged_list = list()
 tokenized_comments = []
-
-label_map = {'bad' : -1, 'potential' : 0, 'good' : 1, 'dialog' : 0, 'ad' : 0, 'author' : 0}
+# print(comments)
+label_map = {'bad' : -1, 'potential' : 0, 'good' : 1, 'dialog' : 0, 'ad' : 0, 'author' : 0, 'repetition': -1}
 
 for i, comment in enumerate(comments):
   comments[i] = comment.replace('\n', '')
@@ -60,16 +62,19 @@ Y = list()
 
 def count_tag(tagged, tag):
       return sum([1 for word in tagged if word[1] in tag])
-for i in range(100):  
+for i in range(len(comments)):  
   if pd.isna(labels[i]) :
         labels[i] = 'potential'
+  # try:
   
   Y.append(label_map[labels[i]])
+  # except:
+  #   print(comments[i], i)
 
 
 # print (pd.isna(labels[5]))
 
-print(Y)
+# print(Y)
 for i, comment_words_list in enumerate(tokenized_comments):
       feature = list()
       # for j, word in enumerate(comment_words_list):
@@ -84,10 +89,20 @@ for i, comment_words_list in enumerate(tokenized_comments):
       # Y.append(label_map[labels[i]])
 
       
-      
-
-print(X)
-
-      
+print(len(Y))
+X_train = X[:300]
+Y_train = Y[:300]
+X_test  = X[301:]
+Y_test  = Y[301:]
+# print(X)
+lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
+lin_clf.fit(X_train, Y_train)
+pred = lin_clf.predict(X_test)
+# print(len())
+# print(len(pred))
+print(accuracy_score(pred, Y_test))
+# print(len(X_train))
+# print(len(X_train[0]))
+# print(len(Y_train))
 
 # print(tagged_list)
