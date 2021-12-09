@@ -89,7 +89,7 @@ if __name__ == '__main__':
     train_input_examples, validation_input_examples = convert_data_to_examples(train, test, 'question', 'passage', 'answer')
 
     train_data = examples_to_tf_dataset(train_input_examples, tokenizer)
-    train_data = train_data.shuffle(100).batch(32).repeat(2)
+    train_data = train_data.shuffle(100).batch(32)
 
     validation_data = examples_to_tf_dataset(validation_input_examples, tokenizer)
     validation_data = validation_data.batch(32)
