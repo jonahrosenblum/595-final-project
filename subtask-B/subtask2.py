@@ -114,5 +114,3 @@ if __name__ == '__main__':
     
     for train, test in zip(train_l, test_l):
         train_model(model, tokenizer, train, test)
-
-    
