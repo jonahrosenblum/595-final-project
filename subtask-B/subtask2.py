@@ -109,10 +109,8 @@ if __name__ == '__main__':
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
                   metrics=[tf.keras.metrics.SparseCategoricalAccuracy('accuracy')])
 
-    train_l = [read_jsonl('small-train.json'), read_xml('trial.xml')]
-    test_l = [read_jsonl('small-test.json'), read_xml('trial.xml')]
+    train_l = [read_jsonl('train.json'), read_xml('trial.xml')]
+    test_l = [read_jsonl('eval.json'), read_xml('trial.xml')]
     
     for train, test in zip(train_l, test_l):
         train_model(model, tokenizer, train, test)
-
-    
