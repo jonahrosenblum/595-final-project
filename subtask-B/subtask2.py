@@ -2,6 +2,7 @@ from transformers import BertTokenizer, TFBertForSequenceClassification
 from transformers import InputExample, InputFeatures
 from transformers import logging
 import tensorflow as tf
+import tensorflow.keras.backend as K
 
 import xmltodict, json
 
@@ -100,6 +101,15 @@ def train_model(model, tokenizer, train, test):
     model.fit(train_data, epochs=3, validation_data=validation_data)
 
 
+def f1_metric(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    recall = true_positives / (possible_positives + K.epsilon())
+    f1_val = 2*(precision*recall)/(precision+recall+K.epsilon())
+    return f1_val
+
 if __name__ == '__main__':
 
     model = TFBertForSequenceClassification.from_pretrained('bert-base-uncased')
@@ -107,10 +117,16 @@ if __name__ == '__main__':
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0), 
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-                  metrics=[tf.keras.metrics.SparseCategoricalAccuracy('accuracy')])
+                  metrics=[tf.keras.metrics.SparseCategoricalAccuracy('accuracy'),
+                           f1_metric
+                  ])
 
-    train_l = [read_jsonl('train.json'), read_xml('trial.xml')]
-    test_l = [read_jsonl('eval.json'), read_xml('trial.xml')]
+    semeval_data = read_xml('trial.xml')
+
+    train_l = [read_jsonl('train.json'), semeval_data[:int(len(semeval_data) * .8)]]
+    test_l = [read_jsonl('eval.json'), semeval_data[int(len(semeval_data) * .8):]]
+    # train_l = [semeval_data[:int(len(semeval_data) * .8)]]
+    # test_l = [semeval_data[int(len(semeval_data) * .8):]]
     
     for train, test in zip(train_l, test_l):
         train_model(model, tokenizer, train, test)
