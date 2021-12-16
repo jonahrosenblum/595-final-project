@@ -26,12 +26,13 @@ from sentence_transformers import SentenceTransformer
 import xmltodict
 
 
-# nltk.download('stopwords')
-# nltk.download('wordnet')
-# nltk.download('averaged_perceptron_tagger')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
 
 semeval_map = {'Potential': 0, 'Good': 1, 'Bad' : -1}
-Y_test = []
+# Y_test = []
+
 
 
 
@@ -62,12 +63,8 @@ Y_train = [d['label'] for d in data if not d['comment'] is None]
 
 test_comments = [d['comment'] for d in test if not d['comment'] is None]
 test_questions = [d['question'] for d in test if not d['comment'] is None]
-test_labels = [d['label'] for d in test if not d['comment'] is None]
-for label in test_labels:
-  if label in semeval_map:
-    Y_test.append(semeval_map[label])
-  else:
-    Y_test.append(-1)
+Y_test = [d['label'] for d in test if not d['comment'] is None]
+
 
 
 stop_words = stopwords.words('english')
