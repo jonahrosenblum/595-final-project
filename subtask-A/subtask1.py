@@ -252,4 +252,4 @@ lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
 print('Accuracy is', accuracy_score(pred, Y_test))
-print('F1 score is', f1_score(pred, Y_test))
+print('F1 score is', f1_score(Y_test, pred))
