@@ -9,9 +9,10 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from sklearn import svm
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
+# from sklearn.
 from gensim.models import Doc2Vec
 from bs4 import BeautifulSoup
 # import NLP
@@ -25,21 +26,13 @@ from sentence_transformers import SentenceTransformer
 import xmltodict
 
 
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+# nltk.download('stopwords')
+# nltk.download('wordnet')
+# nltk.download('averaged_perceptron_tagger')
 
 semeval_map = {'Potential': 0, 'Good': 1, 'Bad' : -1}
 Y_test = []
 
-# with open('CQA-QL-test-gold.txt') as f:
-#     lines = f.readlines()
-# for line in lines:
-#   label = line.split('\t')[1].split('\n')[0]
-#   # label = label[:len(label)-2]
-#   # print(label)
-
-# print('test_labels', len(Y_test))
 
 
 
@@ -253,13 +246,7 @@ for i, test_comment_words_list in enumerate(test_tokenized_comments):
   X_test.append(test_feature)
 
 
-# breakpoint = len(tokenized_comments) * 9 // 10
-# X_train = X_train[:breakpoint]
-# Y_train = c[:breakpoint]
-# X_test = X_train[breakpoint:]
-# Y_test = c[breakpoint:]
-# X_test = test_q
-# Y_test = test_c
+
 
 
 lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
@@ -268,3 +255,4 @@ lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
 print('Accuracy is', accuracy_score(pred, Y_test))
+print('F1 score is', f1_score(pred, Y_test))
