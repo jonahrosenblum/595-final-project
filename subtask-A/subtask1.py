@@ -36,7 +36,7 @@ with open('CQA-QL-test-gold.txt') as f:
 for line in lines:
   label = line.split('\t')[1].split('\n')[0]
   # label = label[:len(label)-2]
-  print(label)
+  # print(label)
   if label in semeval_map:
       
     Y_test.append(semeval_map[label])
@@ -75,7 +75,7 @@ test_questions = [d['question'] for d in test if not d['comment'] is None]
 # test_labels = [d['label'] for d in test if not d['comment'] is None]
 
 max_length = max([max([len(comment) for comment in comments])] + [max([len(question) for question in questions])])
-print('max', max_length)
+# print('max', max_length)
 
 stop_words = stopwords.words('english')
 web_regex = "(http(s)*://)*(www\.)*\w+(\.\w+)?\.[a-z]{2,3}/*\w*[?$%&^*@!]*(\.)?\w*"
@@ -268,4 +268,4 @@ lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
 lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
-print(accuracy_score(pred, Y_test))
+print('Accuracy is', accuracy_score(pred, Y_test))
