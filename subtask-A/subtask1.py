@@ -22,10 +22,10 @@ import itertools
 from sentence_transformers import SentenceTransformer
 
 
-import xmltodict, json
+import xmltodict
 
 
-
+nltk.download()
 
 
 
