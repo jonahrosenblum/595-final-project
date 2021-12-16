@@ -202,7 +202,6 @@ if __name__ == '__main__':
         prediction_counts = {"No": 0, "Yes": 0}
         total_comments = 0
         for comment in eval['comments']:
-            total_comments += 1
             input_dict = tokenizer.encode_plus(
                     eval['question'],
                     comment,
@@ -228,9 +227,9 @@ if __name__ == '__main__':
 
             prediction_counts[labels[label[0]]] += 1
         
-        if (prediction_counts['Yes'] / total_comments) >= 2/3:
+        if prediction_counts['Yes'] > prediction_counts['No']:
             final_prediction = 'Yes'
-        if (prediction_counts['No'] / total_comments) >= 2/3:
+        if prediction_counts['Yes'] < prediction_counts['No']:
             final_prediction = 'No'
         print(eval['QID'] + '	' + final_prediction)
         # print(prediction_counts)
