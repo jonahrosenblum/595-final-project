@@ -254,7 +254,7 @@ Y_test = c[breakpoint:]
 
 
 lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
-print(X_train)
+# print(X_train)
 lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
