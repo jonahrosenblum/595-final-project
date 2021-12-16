@@ -212,10 +212,9 @@ test_questions, test_tokenized_questiions, test_q_tagged_list = preprocessing(te
 
 X_train = list()
 
-Y_train = list()
 
 X_test = list()
-Y_test = list()
+
 
 
 def count_tag(tagged, tag):
