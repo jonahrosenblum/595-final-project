@@ -195,8 +195,8 @@ def preprocessing(texts):
 comments, tokenized_comments, c_tagged_list = preprocessing(comments)
 questions, tokenized_questiions, q_tagged_list = preprocessing(questions)
 
-test_comments, test_tokenized_comments, test_c_tagged_list = preprocessing(test_comments)
-test_questions, test_tokenized_questiions, test_q_tagged_list = preprocessing(test_questions)
+# test_comments, test_tokenized_comments, test_c_tagged_list = preprocessing(test_comments)
+# test_questions, test_tokenized_questiions, test_q_tagged_list = preprocessing(test_questions)
 
 q = list()
 
