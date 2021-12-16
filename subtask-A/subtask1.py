@@ -29,9 +29,21 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
 
-
-
 semeval_map = {'Potential': 0, 'Good': 1, 'Bad' : -1}
+Y_test = []
+with open('CQA-QL-test-gold.txt') as f:
+    lines = f.readlines()
+for line in lines:
+  label = line.split('\t')[1].split('\n')[0]
+  # label = label[:len(label)-2]
+  print(label)
+  if label in semeval_map:
+      
+    Y_test.append(semeval_map[label])
+  else:
+    Y_test.append(-1)
+# print('test_labels', Y_test)
+
 
 
 def read_xml(filename):
@@ -53,13 +65,13 @@ def read_xml(filename):
 
     return semeval_list
 data = read_xml('CQA-QL-train.xml')
-# test = read_xml('CQA-QL-test.xml')
+test = read_xml('test_task3_English.xml')
 comments = [d['comment'] for d in data if not d['comment'] is None]
 questions = [d['question'] for d in data if not d['comment'] is None]
-labels = [d['label'] for d in data if not d['comment'] is None]
+Y_train = [d['label'] for d in data if not d['comment'] is None]
 
-# test_comments = [d['comment'] for d in test if not d['comment'] is None]
-# test_questions = [d['question'] for d in test if not d['comment'] is None]
+test_comments = [d['comment'] for d in test if not d['comment'] is None]
+test_questions = [d['question'] for d in test if not d['comment'] is None]
 # test_labels = [d['label'] for d in test if not d['comment'] is None]
 
 max_length = max([max([len(comment) for comment in comments])] + [max([len(question) for question in questions])])
@@ -78,9 +90,9 @@ q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comm
 q_c_df['questions']=q_c_df.questions.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
 q_c_df['comments']=q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
 
-# test_q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comments'], index = range(len(comments)))
-# test_q_c_df['questions']=test-q_c_df.questions.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
-# test_q_c_df['comments']=test_q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
+test_q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comments'], index = range(len(comments)))
+test_q_c_df['questions']=test_q_c_df.questions.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
+test_q_c_df['comments']=test_q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
 
 sbert_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
@@ -88,8 +100,8 @@ questions_embeddings = sbert_model.encode(q_c_df['questions'])
 comments_embeddings = sbert_model.encode(q_c_df['comments'])
 
 
-# test_questions_embeddings = sbert_model.encode(test_q_c_df['questions'])
-# test_comments_embeddings = sbert_model.encode(test_q_c_df['comments'])
+test_questions_embeddings = sbert_model.encode(test_q_c_df['questions'])
+test_comments_embeddings = sbert_model.encode(test_q_c_df['comments'])
 
 
 
@@ -195,22 +207,20 @@ def preprocessing(texts):
 comments, tokenized_comments, c_tagged_list = preprocessing(comments)
 questions, tokenized_questiions, q_tagged_list = preprocessing(questions)
 
-# test_comments, test_tokenized_comments, test_c_tagged_list = preprocessing(test_comments)
-# test_questions, test_tokenized_questiions, test_q_tagged_list = preprocessing(test_questions)
+test_comments, test_tokenized_comments, test_c_tagged_list = preprocessing(test_comments)
+test_questions, test_tokenized_questiions, test_q_tagged_list = preprocessing(test_questions)
 
-q = list()
+X_train = list()
 
-c = list()
+Y_train = list()
 
-# test_q = list()
-# test_c = list()
+X_test = list()
+Y_test = list()
 
 
 def count_tag(tagged, tag):
   return sum([1 for word in tagged if word[1] in tag])
 
-for i in range(len(labels)):  
-  c.append(labels[i])
 
 # for i in range(len(test_labels)):  
 #   test_c.append(test_labels[i])
@@ -227,34 +237,34 @@ for i, comment_words_list in enumerate(tokenized_comments):
   feature.append(count_tag(c_tagged_list[i], ['NN']))
   feature.append(count_tag(c_tagged_list[i], ['NN']) / len(comment_words_list))
   feature.append(count_tag(c_tagged_list[i], ['VB', 'VBD', 'VBP']) / len(comment_words_list))
-  q.append(feature)
+  X_train.append(feature)
   
 
-# for i, test_comment_words_list in enumerate(test_tokenized_comments):
-#   test_feature = list()
-#   test_pairwise_similarities=cosine_similarity([test_questions_embeddings[i], test_comments_embeddings[i]])
-#   test_feature.append(test_pairwise_similarities[0][1])
-#   test_feature.append(max([len(word) for word in test_comment_words_list]))
-#   test_feature.append(average([len(word) for word in test_comment_words_list]))
-#   test_feature.append(len(test_comment_words_list))
-#   test_feature.append(test_comments[i].count('?'))
-#   test_feature.append(count_tag(test_c_tagged_list[i], ['NN']))
-#   test_feature.append(count_tag(test_c_tagged_list[i], ['NN']) / len(test_comment_words_list))
-#   test_feature.append(count_tag(test_c_tagged_list[i], ['VB', 'VBD', 'VBP']) / len(test_comment_words_list))
-#   test_q.append(test_feature)
+for i, test_comment_words_list in enumerate(test_tokenized_comments):
+  test_feature = list()
+  test_pairwise_similarities=cosine_similarity([test_questions_embeddings[i], test_comments_embeddings[i]])
+  test_feature.append(test_pairwise_similarities[0][1])
+  test_feature.append(max([len(word) for word in test_comment_words_list]))
+  test_feature.append(average([len(word) for word in test_comment_words_list]))
+  test_feature.append(len(test_comment_words_list))
+  test_feature.append(test_comments[i].count('?'))
+  test_feature.append(count_tag(test_c_tagged_list[i], ['NN']))
+  test_feature.append(count_tag(test_c_tagged_list[i], ['NN']) / len(test_comment_words_list))
+  test_feature.append(count_tag(test_c_tagged_list[i], ['VB', 'VBD', 'VBP']) / len(test_comment_words_list))
+  X_test.append(test_feature)
 
 
-breakpoint = len(tokenized_comments) * 9 // 10
-X_train = q[:breakpoint]
-Y_train = c[:breakpoint]
-X_test = q[breakpoint:]
-Y_test = c[breakpoint:]
+# breakpoint = len(tokenized_comments) * 9 // 10
+# X_train = X_train[:breakpoint]
+# Y_train = c[:breakpoint]
+# X_test = X_train[breakpoint:]
+# Y_test = c[breakpoint:]
 # X_test = test_q
 # Y_test = test_c
 
 
 lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
-# print(X_train)
+
 lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
