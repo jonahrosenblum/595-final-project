@@ -1,3 +1,4 @@
+from typing import OrderedDict
 from nltk import tokenize
 from nltk.tokenize import sent_tokenize, word_tokenize
 from numpy.lib.function_base import average, vectorize
@@ -12,38 +13,97 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 from gensim.models import Doc2Vec
-# nltk.download()pip 
 from bs4 import BeautifulSoup
-import NLP
+# import NLP
 from word2number import w2n
-# from nlg.utils import load_spacy_model
 import pickle
-# nlp = load_spacy_model()
+import itertools
+# import spacy
+# from sentence_transformers import SentenceTransformer
 
-# soup = BeautifulSoup(html_doc, 'html.parser')
 
-# path = 'drive/My Drive/EECS_595/'
-data = pd.read_excel('/Users/Jason/Desktop/Computer_Science/Lectures/Michigan/NLP/Project/595-final-project/subtask-A/semeval2015_task3_trial_data.xls')
-# data.head()
+import xmltodict, json
 
+
+
+
+
+
+
+
+semeval_map = {'Potential': 0, 'Good': 1, 'Bad' : -1}
+
+
+def read_xml(filename):
+  semeval_list = []
+  with open(filename) as f:
+    doc = xmltodict.parse(f.read())
+    for q in doc['root']['Question']:
+      for comment in q['Comment']:
+        # print((comment))
+        if isinstance(comment, OrderedDict):
+          if comment['@CGOLD'] not in semeval_map:
+            label = -1
+          else:
+            label = semeval_map[comment['@CGOLD']]
+          semeval_list.append({"question": q['QBody'], 
+                                "comment": comment['CBody'], 
+                                "label": label
+                              })
+
+    return semeval_list
+data = read_xml('CQA-QL-train.xml')
+comments = [d['comment'] for d in data if not d['comment'] is None]
+questions = [d['question'] for d in data if not d['comment'] is None]
+labels = [d['label'] for d in data if not d['comment'] is None]
+# print(comments)
+max_length = max([max([len(comment) for comment in comments])] + [max([len(question) for question in questions])])
+print('max', max_length)
+# print(train)
+# data = pd.read_excel('/Users/Jason/Desktop/Computer_Science/Lectures/Michigan/NLP/Project/595-final-project/subtask-A/semeval2015_task3_trial_data.xls')
 
 stop_words = stopwords.words('english')
 web_regex = "(http(s)*://)*(www\.)*\w+(\.\w+)?\.[a-z]{2,3}/*\w*[?$%&^*@!]*(\.)?\w*"
 map = {"r" : "are", "u" : "you", "ur" : "you are", "Iam" : "I am", "any1" : "anyone", "thx" : "thanks"}
-comments = list(data['comment_body'])
-questions = list(data['full_question'])
-labels = list(data['Gold annotation'])
 lemmatizer = WordNetLemmatizer()
 porterstemmer = PorterStemmer()
+# label_map = {'bad' : -1, 'potential' : 0, 'good' : 1, 'repetition' : -1, 'diaglog' : -1, 'author' : -1}
 
-# q_tagged_list = list()
-# tokenized_comments = []
-# tokenized_questions = []
-# print(comments)
-label_map = {'bad' : -1, 'potential' : 0, 'good' : 1, 'repetition' : -1, 'diaglog' : -1, 'author' : -1}
+
+
+q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comments'], index = range(len(comments)))
+
+# stop_words_l=stopwords.words('english')
+q_c_df['questions']=q_c_df.questions.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
+q_c_df['comments']=q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
+
+
+# 
+sbert_model = SentenceTransformer('bert-base-nli-mean-tokens')
+
+document_embeddings = sbert_model.encode(q_c_df['questions'])
+
+pairwise_similarities=cosine_similarity(document_embeddings)
+print(pairwise_similarities)
+# pairwise_differences=euclidean_distances(document_embeddings)
+
+# most_similar(0,pairwise_similarities,'Cosine Similarity')
+# most_similar(0,pairwise_differences,'Euclidean Distance')
+
+
+
+
+
+
+
+
+
+
+
 
 def strip_html_tags(text):
     """remove html tags from text"""
+    # if (text)
     soup = BeautifulSoup(text, "html.parser")
     stripped_text = soup.get_text(separator=" ")
     return stripped_text
@@ -99,33 +159,25 @@ def decontracted(phrase):
   phrase = re.sub(r"\’m", " am", phrase)
 
   return phrase
-# print(comments)
-# print(strip_html_tags('http://www.thedailyq.org/blog/2011/02/09/larger-georgetown-library-welcomes-public/ lo'))
 def preprocessing(texts):
   tokenized_texts = []
   text_tagged_list = list()
 # Preprocessing 1
   for i, text in enumerate(texts):
   # tokenization
+    if text is None:
+      continue
     texts[i] = strip_html_tags(texts[i])
     texts[i] = remove_emoticons(texts[i])
     texts[i] = remove_URL(texts[i])
     texts[i] = decontracted(texts[i])
     texts[i] = texts[i].lower()
-    # texts[i] = text.replace('\n', '')
-    # texts[i] = text.replace(':O(', '')
-    print(texts[i])
-    # print(texts[i])
     text_words_list = word_tokenize(text)
+    # print(texts[i])
     # Seet lower case and get rid of stopwords and punctuation
-    # text_tagged_list = [word for word in text_words_list if word not in string.punctuation and word != '?']
     text_words_list = [remove_emoticons(word) for word in text_words_list]
-    # text_words_list = [decontracted(word) for word in text_words_list]  # https://www.einfochips.com/blog/nlp-text-preprocessing/
     text_words_list = [remove_accented_chars(word) for word in text_words_list]
-    # text_words_list = [remove_emoticons(word) for ]
-    # text_words_list = [word.lower() for word in text_words_list if word not in stop_words]
     text_words_list = [expand_contractions(word) for word in text_words_list]
-    # text_words_list = [w2n.word_to_num(word.text) if word.pos_ == 'NUM' else word for word in nlp(text)]
     text_words_list = [porterstemmer.stem(word) for word in text_words_list]
     text_words_list = [lemmatizer.lemmatize(word) for word in text_words_list]
     for j, word in enumerate(text_words_list):
@@ -139,46 +191,29 @@ def preprocessing(texts):
       
     texts[i] = ' '.join(text_words_list)
     tokenized_texts.append(text_words_list)
-  # print(texts)
   return texts, tokenized_texts, text_tagged_list
 
-# Preprocessing 2: word embedding for comments
-# c_vectorizer = CountVectorizer().fit_transform(comments)
-# c_vectors = c_vectorizer.toarray()
+comments, tokenized_comments, c_tagged_list = preprocessing(comments)
+questions, tokenized_questiions, q_tagged_list = preprocessing(questions)
 
-# q_vectorizer = CountVectorizer().fit_transform(questions)
-# q_vectors = q_vectorizer.toarray()
-# doc = questions + comments
-# model = Doc2Vec(doc)
-# print (model)
-# print(model.infer_vector(list(questions[0])))
+q = list()
 
-X = list()
+c = list()
 
-Y = list()
+
+
 
 
 def count_tag(tagged, tag):
   return sum([1 for word in tagged if word[1] in tag])
 
-for i in range(len(comments)):  
-  if labels[i] in label_map :
-    Y.append(label_map[labels[i]])
+for i in range(len(labels)):  
+  # if labels[i] in label_map :
+  c.append(labels[i])
 
-def cosineSimilarity(vec1, vec2):
-  vec1 = vec1.reshape(1,-1)
-  vec2 = vec2.reshape(1,-1)
-  return cosine_similarity(vec1, vec2)[0][0]
-
-comments, tokenized_comments, c_tagged_list = preprocessing(comments)
-# questions, tokenized_questions, q_tagged_list = preprocessing(questions)
 
 for i, comment_words_list in enumerate(tokenized_comments):
-  if labels[i] not in label_map:
-    continue
   feature = list()
-  # for j, word in enumerate(comment_words_list):
-  # feature.append(cosine_similarity(c_vectors[i], q_vectors[i]))
   feature.append(max([len(word) for word in comment_words_list]))
   feature.append(average([len(word) for word in comment_words_list]))
   feature.append(len(comment_words_list))
@@ -186,18 +221,19 @@ for i, comment_words_list in enumerate(tokenized_comments):
   feature.append(count_tag(c_tagged_list[i], ['NN']))
   feature.append(count_tag(c_tagged_list[i], ['NN']) / len(comment_words_list))
   feature.append(count_tag(c_tagged_list[i], ['VB', 'VBD', 'VBP']) / len(comment_words_list))
-  X.append(feature)
+  q.append(feature)
   
 
 
 
-breakpoint = len(X) * 9 // 10
-X_train = X[:breakpoint]
-Y_train = Y[:breakpoint]
-X_test  = X[breakpoint+1:]
-Y_test  = Y[breakpoint+1:]
+breakpoint = len(q) * 1 // 1000
+X_train = q[:breakpoint]
+Y_train = c[:breakpoint]
+X_test  = q[breakpoint+1:]
+Y_test  = c[breakpoint+1:]
 
 lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
+print(Y_train)
 lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
