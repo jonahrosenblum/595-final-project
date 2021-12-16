@@ -1,5 +1,5 @@
 from typing import OrderedDict
-from nltk import tokenize
+# from nltk import tokenize
 from nltk.tokenize import sent_tokenize, word_tokenize
 from numpy.lib.function_base import average, vectorize
 import pandas as pd
@@ -26,7 +26,7 @@ import xmltodict
 
 
 nltk.download('stopwords')
-
+nltk.download('wordnet')
 
 
 
@@ -53,45 +53,43 @@ def read_xml(filename):
 
     return semeval_list
 data = read_xml('CQA-QL-train.xml')
+# test = read_xml('CQA-QL-test.xml')
 comments = [d['comment'] for d in data if not d['comment'] is None]
 questions = [d['question'] for d in data if not d['comment'] is None]
 labels = [d['label'] for d in data if not d['comment'] is None]
-# print(comments)
+
+# test_comments = [d['comment'] for d in test if not d['comment'] is None]
+# test_questions = [d['question'] for d in test if not d['comment'] is None]
+# test_labels = [d['label'] for d in test if not d['comment'] is None]
+
 max_length = max([max([len(comment) for comment in comments])] + [max([len(question) for question in questions])])
 print('max', max_length)
-# print(train)
-# data = pd.read_excel('/Users/Jason/Desktop/Computer_Science/Lectures/Michigan/NLP/Project/595-final-project/subtask-A/semeval2015_task3_trial_data.xls')
 
 stop_words = stopwords.words('english')
 web_regex = "(http(s)*://)*(www\.)*\w+(\.\w+)?\.[a-z]{2,3}/*\w*[?$%&^*@!]*(\.)?\w*"
 map = {"r" : "are", "u" : "you", "ur" : "you are", "Iam" : "I am", "any1" : "anyone", "thx" : "thanks"}
 lemmatizer = WordNetLemmatizer()
 porterstemmer = PorterStemmer()
-# label_map = {'bad' : -1, 'potential' : 0, 'good' : 1, 'repetition' : -1, 'diaglog' : -1, 'author' : -1}
 
 
 
 q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comments'], index = range(len(comments)))
 
-# stop_words_l=stopwords.words('english')
 q_c_df['questions']=q_c_df.questions.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
 q_c_df['comments']=q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
 
+# test_q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comments'], index = range(len(comments)))
+# test_q_c_df['questions']=test-q_c_df.questions.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
+# test_q_c_df['comments']=test_q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',' ',w).lower() for w in x.split() if re.sub(r'[^a-zA-Z]',' ',w).lower() not in stop_words) )
 
-# 
 sbert_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
 questions_embeddings = sbert_model.encode(q_c_df['questions'])
 comments_embeddings = sbert_model.encode(q_c_df['comments'])
 
 
-# print(pairwise_similarities[0][1])
-# pairwise_differences=euclidean_distances(document_embeddings)
-
-# most_similar(0,pairwise_similarities,'Cosine Similarity')
-# most_similar(0,pairwise_differences,'Euclidean Distance')
-
-
+# test_questions_embeddings = sbert_model.encode(test_q_c_df['questions'])
+# test_comments_embeddings = sbert_model.encode(test_q_c_df['comments'])
 
 
 
@@ -197,22 +195,28 @@ def preprocessing(texts):
 comments, tokenized_comments, c_tagged_list = preprocessing(comments)
 questions, tokenized_questiions, q_tagged_list = preprocessing(questions)
 
+test_comments, test_tokenized_comments, test_c_tagged_list = preprocessing(test_comments)
+test_questions, test_tokenized_questiions, test_q_tagged_list = preprocessing(test_questions)
+
 q = list()
 
 c = list()
 
-
+# test_q = list()
+# test_c = list()
 
 
 def count_tag(tagged, tag):
   return sum([1 for word in tagged if word[1] in tag])
 
 for i in range(len(labels)):  
-  # if labels[i] in label_map :
   c.append(labels[i])
 
+# for i in range(len(test_labels)):  
+#   test_c.append(test_labels[i])
 
-for i, comment_words_list in enumerate(tokenized_comments[:15]):
+
+for i, comment_words_list in enumerate(tokenized_comments):
   feature = list()
   pairwise_similarities=cosine_similarity([questions_embeddings[i], comments_embeddings[i]])
   feature.append(pairwise_similarities[0][1])
@@ -226,13 +230,28 @@ for i, comment_words_list in enumerate(tokenized_comments[:15]):
   q.append(feature)
   
 
+# for i, test_comment_words_list in enumerate(test_tokenized_comments):
+#   test_feature = list()
+#   test_pairwise_similarities=cosine_similarity([test_questions_embeddings[i], test_comments_embeddings[i]])
+#   test_feature.append(test_pairwise_similarities[0][1])
+#   test_feature.append(max([len(word) for word in test_comment_words_list]))
+#   test_feature.append(average([len(word) for word in test_comment_words_list]))
+#   test_feature.append(len(test_comment_words_list))
+#   test_feature.append(test_comments[i].count('?'))
+#   test_feature.append(count_tag(test_c_tagged_list[i], ['NN']))
+#   test_feature.append(count_tag(test_c_tagged_list[i], ['NN']) / len(test_comment_words_list))
+#   test_feature.append(count_tag(test_c_tagged_list[i], ['VB', 'VBD', 'VBP']) / len(test_comment_words_list))
+#   test_q.append(test_feature)
 
 
 breakpoint = len(tokenized_comments) * 9 // 10
 X_train = q[:breakpoint]
 Y_train = c[:breakpoint]
-X_test  = q[breakpoint:]
-Y_test  = c[breakpoint:]
+X_test = q[breakpoint:]
+Y_test = c[breakpoint:]
+# X_test = test_q
+# Y_test = test_c
+
 
 lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
 print(X_train)
