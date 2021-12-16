@@ -25,7 +25,7 @@ from sentence_transformers import SentenceTransformer
 import xmltodict
 
 
-nltk.download()
+nltk.download('stopwords')
 
 
 
