@@ -19,7 +19,7 @@ from word2number import w2n
 import pickle
 import itertools
 # import spacy
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 
 
 import xmltodict, json
@@ -81,10 +81,11 @@ q_c_df['comments']=q_c_df.comments.apply(lambda x: " ".join(re.sub(r'[^a-zA-Z]',
 # 
 sbert_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
-document_embeddings = sbert_model.encode(q_c_df['questions'])
+questions_embeddings = sbert_model.encode(q_c_df['questions'])
+comments_embeddings = sbert_model.encode(q_c_df['comments'])
 
-pairwise_similarities=cosine_similarity(document_embeddings)
-print(pairwise_similarities)
+
+# print(pairwise_similarities[0][1])
 # pairwise_differences=euclidean_distances(document_embeddings)
 
 # most_similar(0,pairwise_similarities,'Cosine Similarity')
@@ -203,7 +204,6 @@ c = list()
 
 
 
-
 def count_tag(tagged, tag):
   return sum([1 for word in tagged if word[1] in tag])
 
@@ -212,8 +212,10 @@ for i in range(len(labels)):
   c.append(labels[i])
 
 
-for i, comment_words_list in enumerate(tokenized_comments):
+for i, comment_words_list in enumerate(tokenized_comments[:15]):
   feature = list()
+  pairwise_similarities=cosine_similarity([questions_embeddings[i], comments_embeddings[i]])
+  feature.append(pairwise_similarities[0][1])
   feature.append(max([len(word) for word in comment_words_list]))
   feature.append(average([len(word) for word in comment_words_list]))
   feature.append(len(comment_words_list))
@@ -226,14 +228,14 @@ for i, comment_words_list in enumerate(tokenized_comments):
 
 
 
-breakpoint = len(q) * 1 // 1000
+breakpoint = len(tokenized_comments) * 9 // 10
 X_train = q[:breakpoint]
 Y_train = c[:breakpoint]
-X_test  = q[breakpoint+1:]
-Y_test  = c[breakpoint+1:]
+X_test  = q[breakpoint:]
+Y_test  = c[breakpoint:]
 
 lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
-print(Y_train)
+print(X_train)
 lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
 
