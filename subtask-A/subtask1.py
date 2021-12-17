@@ -1,10 +1,9 @@
 from typing import OrderedDict
-# from nltk import tokenize
 from nltk.tokenize import sent_tokenize, word_tokenize
 from numpy.lib.function_base import average, vectorize
 import pandas as pd
 import numpy as np
-import re, scipy, nltk, unidecode, contractions, string, re
+import re, nltk, unidecode, contractions, string, re
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
@@ -12,14 +11,8 @@ from sklearn import svm
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
-# from sklearn.
-from gensim.models import Doc2Vec
 from bs4 import BeautifulSoup
-# import NLP
-from word2number import w2n
 import pickle
-import itertools
-# import spacy
 from sentence_transformers import SentenceTransformer
 
 
@@ -31,7 +24,6 @@ nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
 
 semeval_map = {'Potential': 0, 'Good': 1, 'Bad' : -1}
-# Y_test = []
 
 
 
@@ -43,7 +35,6 @@ def read_xml(filename):
     doc = xmltodict.parse(f.read())
     for q in doc['root']['Question']:
       for comment in q['Comment']:
-        # print((comment))
         if isinstance(comment, OrderedDict):
           if comment['@CGOLD'] not in semeval_map:
             label = -1
@@ -74,6 +65,7 @@ lemmatizer = WordNetLemmatizer()
 porterstemmer = PorterStemmer()
 
 
+# Embedding reference: https://github.com/varun21290/medium/blob/master/Document%20Similarities/Document_Similarities.ipynb
 
 q_c_df = pd.DataFrame(list(zip(questions,comments)), columns=['questions', 'comments'], index = range(len(comments)))
 
@@ -101,10 +93,10 @@ test_comments_embeddings = sbert_model.encode(test_q_c_df['comments'])
 
 
 
-
+# Preprocessing reference: https://towardsdatascience.com/nlp-text-preprocessing-a-practical-guide-and-template-d80874676e79
 def strip_html_tags(text):
     """remove html tags from text"""
-    # if (text)
+    
     soup = BeautifulSoup(text, "html.parser")
     stripped_text = soup.get_text(separator=" ")
     return stripped_text
@@ -130,6 +122,7 @@ def remove_URL(text):
     """Remove URLs from a sample string"""
     return re.sub(r"http\S+", "",  text)
 
+# Decontract reference: https://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python/47091490#47091490
 def decontracted(phrase):
   """decontracted takes text and convert contractions into natural form.
      ref: https://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python/47091490#47091490"""
@@ -174,7 +167,7 @@ def preprocessing(texts):
     texts[i] = decontracted(texts[i])
     texts[i] = texts[i].lower()
     text_words_list = word_tokenize(text)
-    # print(texts[i])
+
     # Seet lower case and get rid of stopwords and punctuation
     text_words_list = [remove_emoticons(word) for word in text_words_list]
     text_words_list = [remove_accented_chars(word) for word in text_words_list]
@@ -211,8 +204,7 @@ def count_tag(tagged, tag):
   return sum([1 for word in tagged if word[1] in tag])
 
 
-# for i in range(len(test_labels)):  
-#   test_c.append(test_labels[i])
+
 
 
 for i, comment_words_list in enumerate(tokenized_comments):
@@ -250,6 +242,7 @@ lin_clf = svm.SVC(decision_function_shape='ovo', kernel='linear')
 
 lin_clf.fit(X_train, Y_train)
 pred = lin_clf.predict(X_test)
+
 
 print('Accuracy is', accuracy_score(pred, Y_test))
 print('F1 score is', f1_score(Y_test, pred, average = 'macro'))
