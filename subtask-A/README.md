@@ -10,7 +10,7 @@ Please contact Yitong Li at yitongli@umich.edu if you have any questions not ans
 - **It is strongly recommended to run this program on a GPU, it will take hours or days otherwise. main_job.sh includes the shell script required to run the program on GreatLakes slurm.** 
 
 ## Evaluating the result
-Once you run`python3 subtask1.py` it will print out the accuracy and the Macro F1 score
+Once you run`python3 subtask1.py`, it will print out the accuracy and the Macro F1 score.
 ## All dependencies (default version with pip is fine or you can follow the ones below)
 pip install pandas==1.3.5
 numpy==1.21.4 
