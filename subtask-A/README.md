@@ -5,8 +5,7 @@ Please contact Yitong Li at yitongli@umich.edu if you have any questions not ans
 ## Running the code
 - It is recommended that you use Python 3.8.7. We cannot promise that any other version will work. The Python version and cuda drivers used can be found in `main_job.sh`.
 - Before running the code you must create a virtual environment and then install the dependencies listed below.
-- The script can be run as `python3 subtask1.py` with a couple of flags options.
-- With no flags, the script will simply train and evaluate on the SemEval dataset.
+- The script can be run as `python3 subtask1.py`.
 - **It is strongly recommended to run this program on a GPU, it will take hours or days otherwise. main_job.sh includes the shell script required to run the program on GreatLakes slurm.** 
 
 ## Evaluating the result
