@@ -17,4 +17,4 @@ pushd /home/jonaher/595-final-project/subtask-B
 source env/bin/activate
 
 # run subtask 2
-python subtask2.py
+python3 subtask2.py # -b -m
